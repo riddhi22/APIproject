@@ -286,65 +286,92 @@ def datafilter(name,word,scrname,rtcount,favcount,datestart,dateend,language,loc
 
 @app.route('/secondapi/',methods=['GET'])
 def get_all_datatext():
-  name = request.args.get('name')
-  word = request.args.get('text')
-  scrname = request.args.get('scrname')
-  rtcount = request.args.get('rtcount')
-  favcount = request.args.get('favcount')
-  datestart = request.args.get('datestart')
-  dateend = request.args.get('dateend')
-  language = request.args.get('lang') 
-  location = request.args.get('location')
-  mention = request.args.get('mention')
-  sort = request.args.get('sort')
-  newlist = datafilter(name,word,scrname,rtcount,favcount,datestart,dateend,language,location,mention,sort)
-  
-  #page = request.args.get('page')
-  page = request.args.get('page', 1)
   try:
-    page = int(page)
+    name = request.args.get('name')
+    word = request.args.get('text')
+    scrname = request.args.get('scrname')
+    rtcount = request.args.get('rtcount')
+    favcount = request.args.get('favcount')
+    datestart = request.args.get('datestart')
+    dateend = request.args.get('dateend')
+    language = request.args.get('lang') 
+    location = request.args.get('location')
+    mention = request.args.get('mention')
+    sort = request.args.get('sort')
+    newlist = datafilter(name,word,scrname,rtcount,favcount,datestart,dateend,language,location,mention,sort)
+    
+    #page = request.args.get('page')
+    page = request.args.get('page', 1)
+    try:
+      page = int(page)
+    except:
+      page = 1
+    limit = 10
+    next_page = page + 1
+    previous = page-1
+    if previous<1:
+      previous=1
+   
+    if len(newlist) <=(page*limit):
+      next_page = 1
+    newlist = newlist[((page-1)*limit) : (page*limit)]
+    return JSONEncoder().encode({'newlist': newlist, 'page': page, 
+      'next_page':next_page, 'previous':previous})
   except:
-    page = 1
-  limit = 10
-  next_page = page + 1
-  previous = page-1
-  if previous<1:
-    previous=1
- 
-  if len(newlist) <=(page*limit):
-    next_page = 1
-  newlist = newlist[((page-1)*limit) : (page*limit)]
-  return JSONEncoder().encode({'newlist': newlist, 'page': page, 
-'next_page':next_page, 'previous':previous})
+    message = "Something is wrong"
+    status_code = error.status_code
+    success = False  
+    response = {
+        'success': success,
+        'error': {
+            'type': error.__class__.__name__,
+            'message': message
+        }
+    }
+    return jsonify(response), status_code
   
+
 
 @app.route('/firstCSVfile/',methods=['GET','POST'])
 def get_branch_data_file():
-  name = request.args.get('name')
-  word = request.args.get('text')
-  scrname = request.args.get('scrname')
-  rtcount = request.args.get('rtcount')
-  favcount = request.args.get('favcount')
-  datestart = request.args.get('datestart')
-  dateend = request.args.get('dateend')
-  language = request.args.get('lang') 
-  location = request.args.get('location')
-  mention = request.args.get('mention')
-  sort = request.args.get('sort')
-  newlist = datafilter(name,word,scrname,rtcount,favcount,datestart,dateend,language,location,mention,sort)
-  return_csvfile = "id,language,name,screen_name,user_id,text,mentions,retweet_count,favorite_count\n"
-  for i in newlist:
-    return_csvfile += ",".join([str(i['id']),i['lang'].encode("utf-8"), i['use']['name'].encode("utf-8"), 
-      i['use']['screen_name'].encode("utf-8") ,str(i['use']['id']), i['text'].encode("utf-8"),str(i['mention']), 
-      str(i['retweet_count']), str(i['fav_count'])]) + "\n"
+  try:
+    name = request.args.get('name')
+    word = request.args.get('text')
+    scrname = request.args.get('scrname')
+    rtcount = request.args.get('rtcount')
+    favcount = request.args.get('favcount')
+    datestart = request.args.get('datestart')
+    dateend = request.args.get('dateend')
+    language = request.args.get('lang') 
+    location = request.args.get('location')
+    mention = request.args.get('mention')
+    sort = request.args.get('sort')
+    newlist = datafilter(name,word,scrname,rtcount,favcount,datestart,dateend,language,location,mention,sort)
+    return_csvfile = "id,language,name,screen_name,user_id,text,mentions,retweet_count,favorite_count\n"
+    for i in newlist:
+      return_csvfile += ",".join([str(i['id']),i['lang'].encode("utf-8"), i['use']['name'].encode("utf-8"), 
+        i['use']['screen_name'].encode("utf-8") ,str(i['use']['id']), i['text'].encode("utf-8"),str(i['mention']), 
+        str(i['retweet_count']), str(i['fav_count'])]) + "\n"
 
-  
-  response = make_response(return_csvfile)
-  response.headers['Cache-Control'] = 'no-cache'
-  response.headers['Content-Type'] = 'text/csv'
-  response.headers['Content-Disposition'] = 'attachment; filename=twitter_file.csv'
-  return response
-  
+    response = make_response(return_csvfile)
+    response.headers['Cache-Control'] = 'no-cache'
+    response.headers['Content-Type'] = 'text/csv'
+    response.headers['Content-Disposition'] = 'attachment; filename=twitter_file.csv'
+    return response
+  except:
+    message = "Something is wrong"
+    status_code = error.status_code
+    success = False  
+    response = {
+        'success': success,
+        'error': {
+            'type': error.__class__.__name__,
+            'message': message
+        }
+    }
+    return jsonify(response), status_code
+
+
 if __name__ == '__main__':
   app.run(host='0.0.0.0', port=8000)  
 
